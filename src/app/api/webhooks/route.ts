@@ -3,8 +3,12 @@ import { stripe } from "@/lib/stripe";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+// import { Resend } from 'resend'
+// import OrderReceivedEmail from '@/components/emails/OrderReceivedEmail'
 
-export const POST = async (req: Request) => {
+// const resend = new Resend(process.env.RESEND_API_KEY)
+
+export async function POST(req: Request) {
   try {
     const body = await req.text();
     const signature = headers().get("stripe-signature");
@@ -38,20 +42,12 @@ export const POST = async (req: Request) => {
       const billingAddress = session.customer_details!.address;
       const shippingAddress = session.shipping_details!.address;
 
-      await db.order.update({
-        where: { id: orderId },
+      const updatedOrder = await db.order.update({
+        where: {
+          id: orderId,
+        },
         data: {
           isPaid: true,
-          billingAddress: {
-            create: {
-              name: session.customer_details!.name!,
-              city: billingAddress!.city!,
-              country: billingAddress!.country!,
-              postalCode: billingAddress!.postal_code!,
-              street: billingAddress!.line1!,
-              state: billingAddress!.state!,
-            },
-          },
           shippingAddress: {
             create: {
               name: session.customer_details!.name!,
@@ -59,25 +55,49 @@ export const POST = async (req: Request) => {
               country: shippingAddress!.country!,
               postalCode: shippingAddress!.postal_code!,
               street: shippingAddress!.line1!,
-              state: shippingAddress!.state!,
+              state: shippingAddress!.state,
+            },
+          },
+          billingAddress: {
+            create: {
+              name: session.customer_details!.name!,
+              city: billingAddress!.city!,
+              country: billingAddress!.country!,
+              postalCode: billingAddress!.postal_code!,
+              street: billingAddress!.line1!,
+              state: billingAddress!.state,
             },
           },
         },
       });
 
-      return NextResponse.json({
-        result: event,
-        ok: true,
-      });
+      // await resend.emails.send({
+      //   from: 'CaseCobra <hello@joshtriedcoding.com>',
+      //   to: [event.data.object.customer_details.email],
+      //   subject: 'Thanks for your order!',
+      //   react: OrderReceivedEmail({
+      //     orderId,
+      //     orderDate: updatedOrder.createdAt.toLocaleDateString(),
+      //     // @ts-ignore
+      //     shippingAddress: {
+      //       name: session.customer_details!.name!,
+      //       city: shippingAddress!.city!,
+      //       country: shippingAddress!.country!,
+      //       postalCode: shippingAddress!.postal_code!,
+      //       street: shippingAddress!.line1!,
+      //       state: shippingAddress!.state,
+      //     },
+      //   }),
+      // })
     }
-  } catch (error) {
-    console.error(error);
+
+    return NextResponse.json({ result: event, ok: true });
+  } catch (err) {
+    console.error(err);
+
     return NextResponse.json(
-      {
-        message: "Something went wrong!",
-        ok: false,
-      },
+      { message: "Something went wrong", ok: false },
       { status: 500 }
     );
   }
-};
+}
