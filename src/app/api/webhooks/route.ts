@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       console.log("stripe session", session);
 
       const billingAddress = session.customer_details!.address;
-      const shippingAddress = session.shipping_details!.address;
+      const shippingAddress = session.customer_details!.address;
 
       const updatedOrder = await db.order.update({
         where: {
