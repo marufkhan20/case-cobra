@@ -39,6 +39,8 @@ export async function POST(req: Request) {
         throw new Error("Invalid request metadata");
       }
 
+      console.log("stripe session", session);
+
       const billingAddress = session.customer_details!.address;
       const shippingAddress = session.shipping_details!.address;
 
