@@ -41,4 +41,5 @@ export const constructMetaData = ({
     creator: "@mdmaruf",
   },
   icons,
+  metadataBase: new URL("https://case-cobra-app.vercel.app/"),
 });
